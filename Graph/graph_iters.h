@@ -6,13 +6,22 @@ namespace graph {
     
     public:
         successors_range(Graph<DataT>& graph, NodeId node_id):
-            begin(graph, node_id),
-            end(graph, graph.nodes[node_id].successors.size() + 1) // TODO do I need +1 here?
+            graph(graph_), 
+            start_node_id(node_id)
         { }
         
-        successors_iter<DataT> begin, end;
+        successors_iter<DataT> begin(){
+            return successors_iter<DataT>(graph, start_node_id);
+        } 
+        
+        successors_iter<DataT> end() {
+            return successors_iter<DataT>(graph);
+        }
 
-        virtual ~successors_range() = default;
+    private:
+        Graph& graph;
+        NodeId start_node_id;
+        
     };
 
 //--------------------------------------------------------------------------------
@@ -21,13 +30,18 @@ namespace graph {
     class successors_iter {
 
     public:
-        successors_iter(NodeId current_node_id_, Graph<DataT>& graph_):
+        successors_iter(Graph<DataT>& graph_):
+            graph(graph_),
+            current_node_id(graph.nodes[node_id].successors.size() + 1) // constructing to end
+        { }
+
+        successors_iter(Graph<DataT>& graph_, NodeId current_node_id_):
             current_node_id(current_node_id_),
-            graph(graph_) 
+            graph(graph_)
         { }   
         
         successors_iter<DataT>& operator+=(int append_value) {
-            Node current_node = graph.nodes[current_node_id];
+            realization::RawNode current_node = graph.nodes[current_node_id];
             this->target_successor_id += append_value;
             
             NodeId next_succsessor_id = current_node.successors[target_successor_id];         
@@ -56,10 +70,10 @@ namespace graph {
         }
 
         Node<DataT>& operator*() {
-            return graph.nodes[current_node_id];
+            return Node(graph, current_node_id);
         }
 
-        virtual ~successors_iter() = default;
+        
 
         NodeId current_node_id;
         NodeId target_successor_id = 0;
@@ -73,19 +87,29 @@ namespace graph {
     
     public:
         traverse_range(Graph<DataT>& graph):
-            begin(graph, 0),
-            end(graph, graph.nodes.size() + 1) // TODO do I need +1 here? 
+            graph(graph)
         { }
 
-        traverse_iter<DataT> begin, end;
+        traverse_iter<DataT> begin() {
+            return traverse_iter<DataT>(graph, 0);
+        }
+        
+        traverse_iter<DataT> end() {
+            return traverse_iter<DataT>(graph);
+        }
 
-        virtual ~traverse_range() = default;
+        Graph& graph;
     };
 
     template <typename DataT>
     class traverse_iter {
     
     public:
+        traverse_iter(Graph<DataT>& graph_):
+            graph(graph_),
+            current_node_id(graph.nodes.size() + 1) 
+        { }
+
         traverse_iter(Graph<DataT>& graph_):
             graph(graph_),
             current_node_id(0)
@@ -99,7 +123,7 @@ namespace graph {
             return !operator==(other);  
         }
 
-        traverse_iter<DataT>& operator+=(int append_value) { // TODO что если выйдем за границы... или похуй....
+        traverse_iter<DataT>& operator+=(int append_value) {
             this->current_node_id += append_value;
 
             return *this;
@@ -116,12 +140,12 @@ namespace graph {
         }
 
         Node<DataT>& operator*() { 
-            return graph.nodes[current_node_id];
+            return  Node(graph, current_node_id);
         }
 
         Graph<DataT>& graph;
         NodeID current_node_id;
 
-        virtual ~traverse_iter() = default;
+        
     };
 } // namespace graph

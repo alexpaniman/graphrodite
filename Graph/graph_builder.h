@@ -42,7 +42,7 @@ namespace graph {
             return -1;
         }
 
-        virtual ~GraphBuilder() = default;
+        
     private:
         Graph<DataT>& graph;
         std::map<DataT, NodeId> builded_nodes;

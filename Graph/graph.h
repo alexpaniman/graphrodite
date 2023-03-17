@@ -8,13 +8,14 @@
 namespace graph {
     using NodeId = int;
 
-    template <typename DataT>
-    struct Node {
-        Node(DataT data_): data(data_) {}
+    namespace realization {
+        template <typename DataT>
+        struct RawNode {
+            RawNode(DataT data_): data(data_) {}
 
-        DataT data;
-        llvm::SmallVector<NodeId, 128> successors;
-        virtual ~Node() = default;
+            DataT data;
+            llvm::SmallVector<NodeId, 8> successors;
+        };
     };
 
     template <typename DataT>
@@ -22,7 +23,7 @@ namespace graph {
     
     public:
         NodeId create_node(DataT data) { 
-            nodes.append(Node(data)); 
+            nodes.emplace(nodes.end(), realization::RawNode(data)); 
             return nodes.size();
         }
         
@@ -30,22 +31,44 @@ namespace graph {
             return traverse_range<DataT>(*this);
         }
 
-        proxy_node_range<DataT> nodes() { 
-            return proxy_node_range<DataT>(); // TODO what is proxy_node_range? How its different from traverse_range/successors_range
-        }
-        
-        successors_range<DataT> get_successors(Node<DataT> node) {
+        successors_range<DataT> get_successors(realization::RawNode<DataT> node) {
             auto search_result = std::find(nodes.begin(), nodes.end(), node);
             
             if (search_result != nodes.end())
                 return successors_range<DataT>(*this, *search_result - nodes.begin());
             
-            return successors_range<DataT>(*this, nodes.end()); // TODO ok?
+            return successors_range<DataT>(*this, nodes.end());
         }
 
-        virtual ~Graph() = default;
+        std::vector<realization::RawNode<DataT>> nodes;
+    };
 
-        llvm::SmallVector<Node<DataT>, 512> nodes;
+//--------------------------------------------------------------------------------
+
+    template <typename DataT>
+    class Node {
+    
+    public:
+        Node(Graph<DataT>& graph_, NodeId node_id_):
+            graph(grpah_),
+            node_id(node_id_)    
+        { }
+
+        operator realization::RawNode() const {
+            return graph.nodes[node_id];
+        }
+
+        successors_range get_successors() {
+            return graph.get_successors(graph.nodes[node_id]);
+        }
+
+        DataT& get_data() {
+            return graph.nodes[node_id].data
+        }
+
+        private:
+            Graph<DataT>& graph;
+            NodeId node_id;
     };
 
 } // namespace graph
