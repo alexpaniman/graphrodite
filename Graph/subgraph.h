@@ -2,12 +2,12 @@
 #pragma once
 #include "graph.h"
 
-namespace graph {
+namespace graph_lib {
     template <typename DataT>
     class SubGraph {
         SubGraph(Graph<DataT>& graph_, std::vector<NodeId>& nodes_):
-            graph(graph);
-            nodes(nodes_);    
+            graph(graph_),
+            nodes(nodes_)    
         {}
 
         Graph<DataT>& graph;

@@ -1,22 +1,18 @@
 #pragma once
 #include "graph.h"
 #include <map>
+#include <optional>
 
-namespace graph {
+namespace graph_lib {
     template <typename DataT> 
     class GraphBuilder {
     
     public:
-        GraphBuilder(Graph<DataT>& graph_): graph(graph_) {}
-
-        Graph<DataT>& get_graph() {
-            return graph;
-        }
+        Graph<DataT> get_graph() { return graph; }
         
         bool add_vertex(DataT data) {
-            if (builded_nodes.find(data) != builded_nodes.end()) {
-                NodeId new_node_id = graph.create_node(data);
-                builded_nodes[data] = new_node_id;
+            if (!builded_nodes.contains(data)) {
+                builded_nodes[data] = graph.create_node(data);
                 return true;
             }
 
@@ -24,27 +20,28 @@ namespace graph {
         }
 
         bool add_edge(DataT from, DataT to) {
-            NodeId from_id = builded_nodes.find(from);
-            NodeId to_id = builded_nodes.find(to);
+            auto from_id = get_vertex(from);
+            auto to_id = get_vertex(to);
 
-            if (from_id == -1 or to_id == -1)
+            if (!from_id or !to_id)
                 return false;
             
-            graph.nodes[from_id].successors.append(to_id);
+            auto& successors = graph.nodes[*from_id].successors;
+            successors.emplace_back(*to_id);
+            return true;
         }
         
-        NodeId get_vertex(DataT vertex_data) const {
-            auto& was_found = builded_nodes.find(vertex_data);
+        std::optional<NodeId> get_vertex(DataT vertex_data) {
+            auto was_found = builded_nodes.find(vertex_data);
 
             if (was_found != builded_nodes.end())
-                return was_found.second;
+                return was_found->second;
 
-            return -1;
+            return std::nullopt;
         }
-
         
     private:
-        Graph<DataT>& graph;
+        Graph<DataT> graph;
         std::map<DataT, NodeId> builded_nodes;
     };
 }
