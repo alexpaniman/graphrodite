@@ -1,14 +1,30 @@
 #pragma once
-#include <llvm/ADT/SmallVector.h>
 #include <vector>
 #include <inttypes.h>
 #include <iostream>
-#include <llvm/Support/raw_ostream.h>
 
 //--------------------------------------------------------------------------------
 
 namespace graph_lib {
-    template <typename DataT>
+    template <typename T> struct vector_traits {
+        static bool const value = false;  
+    };
+
+    template <typename... Args>
+    struct vector_traits<std::vector<Args...>> {
+        static bool const value = true;
+    };
+
+    template <typename T>
+    concept VectorConcept = vector_traits<T>::value; 
+
+    template <typename T>
+    concept GraphConcept = requires(T graph) {
+        {graph.nodes} -> VectorConcept;
+    };
+
+
+    template <typename DataT, GraphConcept GraphT>
     class traverse_range;
 
     template <typename DataT>
@@ -25,7 +41,7 @@ namespace graph_lib {
             RawNode(DataT data_): data(data_) {}
 
             DataT data;
-            llvm::SmallVector<NodeId, 8> successors;
+            std::vector<NodeId> successors;
         };
     };
 
@@ -54,44 +70,35 @@ namespace graph_lib {
         Graph<DataT>& graph;
         NodeId node_id;
     };
+
 //--------------------------------------------------------------------------------
 
     template <typename DataT>
     class Graph {
     
     public:
+
         NodeId create_node(DataT data) { 
             nodes.emplace_back(data); 
             return nodes.size() - 1;
         }
         
-        traverse_range<DataT> traverse() { return { *this }; }
+        traverse_range<DataT, Graph> traverse() { return { *this }; }
 
         successors_range<DataT> get_successors(Node<DataT>& node) {
-            // NodeId node_id = reinterpret_cast<intptr_t>(&node) - reinterpret_cast<intptr_t>(&nodes[0]);
-            llvm::errs() << "NODE ID: " << node.id() << "\n";
-
-
-            assert(node.id() >= 0 and node.id() < nodes.size() and "Tobi pezda");
-            // if (node.id() < 0 or node.id() >= nodes.size())
-            //     return successors_range<DataT>(*this, node.id(), false);
-
+            assert(node.id() >= 0 and node.id() < nodes.size() and "Incorrect node");
             return { *this, node.id() };
         }
 
         void dump() {
-
             for (int i = 0; i < nodes.size(); ++ i) {
-                llvm::errs() << "node: " << i << ": ";
+                std::cout << "node: " << i << ": ";
                 for (auto &&succ: nodes[i].successors)
-                    llvm::errs() << succ << ", ";
-                llvm::errs() << "\n";
+                    std::cout << succ << ", ";
+                std::cout << "\n";
             }
-            
         }
 
         std::vector<details::RawNode<DataT>> nodes;
     };
-
-
 } // namespace graph

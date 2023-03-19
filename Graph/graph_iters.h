@@ -109,17 +109,17 @@ namespace graph_lib {
 
 
 //--------------------------------------------------------------------------------
-    template <typename DataT>
+    template <typename DataT, GraphConcept GraphT>
     class traverse_range {
     
     public:
-        traverse_range(Graph<DataT>& graph_): graph(graph_) {}
+        traverse_range(GraphT& graph_): graph(graph_) {}
 
         traverse_iter<DataT> begin() { return { graph,                                       0 }; }
         traverse_iter<DataT>   end() { return { graph, static_cast<NodeId>(graph.nodes.size()) }; }
 
     private:
-        Graph<DataT>& graph;
+        GraphT& graph;
     };
 
 } // namespace graph
