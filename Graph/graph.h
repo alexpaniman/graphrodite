@@ -32,10 +32,10 @@ namespace graph_lib {
     };
 
 
-    template <typename DataT, GraphStorageConcept StorageT>
+    template <GraphStorageConcept StorageT>
     class traverse_range;
 
-    template <typename DataT, GraphStorageConcept StorageT>
+    template <GraphStorageConcept StorageT>
     class successors_range;
     
     template <typename DataT>
@@ -55,28 +55,34 @@ namespace graph_lib {
 
 //--------------------------------------------------------------------------------
 
-    template <typename DataT, GraphStorageConcept StorageT>
+    template <GraphStorageConcept StorageT>
     class Node {
     
     public:
+
         Node(StorageT& graph_, NodeId node_id_):
             graph(graph_),
             node_id(node_id_) {}
 
-        successors_range<DataT, StorageT> get_successors() {
+        successors_range<StorageT> get_successors() {
             // Now it's this node's job to construct
             // successors range, having information
-            // only about BasicGraph:
+            // only about GraphStorage:
 
             // So can't do this anymore:
             // return graph.get_successors(*this);
 
             // I'm feel to sleepy to implement now,
             // but I believe in you!
-            throw std::runtime_error("Unimplemented!");
+
+            return { graph,  node_id }; 
+            // throw std::runtime_error("Unimplemented!");
         }
 
-        DataT get_data() {
+        // TODO WAS: DataT get_data() {
+        // using data_t = decltype(graph.nodes[0].data);
+
+        auto get_data() {
             return graph.nodes[node_id].data;
         }
 
@@ -102,32 +108,35 @@ namespace graph_lib {
     // convenient to works with (like nodes() for iterating over all proxy nodes)
 
     // This pattern actually has a name: shell/kernel if i remember correctly,
-    // in our case BasicGraph is kernel and shell is, well, "regular" Graph.
+    // in our case GraphStorage is kernel and shell is, well, "regular" Graph.
     template <typename DataT>
-    class BasicGraph {
+    class GraphStorage {
     public:
+
         // This, really should be an allocator, something like free_list<dyn_array<mallocator>>,
         // but I'm yet to make such, but for now this should be enough to illustrate the idea:  
         std::vector<details::RawNode<DataT>> nodes;
 
-        // It's internal API can look something like:
-        NodeId successors(NodeId target); // Needs implementing! It should use ProxyNodes.
+        // // It's internal API can look something like:
+        // TODO we do not need this: 
+        // NodeId successors(NodeId target); // Needs implementing! It should use ProxyNodes.
     };
 
     template <typename DataT>
-    class Graph: public BasicGraph<DataT> {
+    class Graph {
     
     public:
-        BasicGraph<DataT> storage;
+
+        GraphStorage<DataT> storage;
 
         NodeId create_node(DataT data) { 
             storage.nodes.emplace_back(data); 
             return storage.nodes.size() - 1;
         }
         
-        traverse_range<DataT, BasicGraph<DataT>> traverse() { return { this->storage }; }
+        traverse_range<GraphStorage<DataT>> traverse() { return { this->storage }; }
 
-        successors_range<DataT, BasicGraph<DataT>> get_successors(Node<DataT, BasicGraph<DataT>>& node) {
+        successors_range<GraphStorage<DataT>> get_successors(Node<GraphStorage<DataT>>& node) {
             assert(node.id() >= 0 and node.id() < storage.nodes.size() and "Incorrect node");
             return { *this, node.id() };
         }
@@ -140,6 +149,7 @@ namespace graph_lib {
                 std::cout << "\n";
             }
         }
+
 
     };
 } // namespace graph
