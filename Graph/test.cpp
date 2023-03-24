@@ -25,6 +25,10 @@ int main(void) {
     auto graph = builder.get_graph();
     graph.dump();
 
+    // Now concepts work! Yay! Both of them are Graphs:
+    static_assert(graph_lib::GraphStorageConcept<graph_lib::BasicGraph<int>>);
+    static_assert(graph_lib::GraphStorageConcept<graph_lib::Graph<int>>);
+
     for (auto next_node : graph.traverse()) {
         std::cout << next_node.id() << "\n";
     }

@@ -26,7 +26,9 @@ namespace graph_lib {
             if (!from_id or !to_id)
                 return false;
             
-            auto& successors = graph.nodes[*from_id].successors;
+            auto& successors = graph.storage.nodes[*from_id].successors;
+            // TODO:                 ^~~~~~~~~~~~~~~~~~~~~~~ should replace by accessor function in Graph
+
             successors.emplace_back(*to_id);
             return true;
         }
